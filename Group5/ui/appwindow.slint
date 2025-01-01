@@ -1,0 +1,232 @@
+import { Button, VerticalBox } from "std-widgets.slint";
+import { LineEdit } from "std-widgets.slint";
+import { StandardButton } from "std-widgets.slint";
+import { CheckBox,ComboBox } from "std-widgets.slint";
+import { GroupBox, HorizontalBox } from "std-widgets.slint";
+import { GridBox } from "std-widgets.slint";
+
+
+export component AppWindow inherits Window {
+    in-out property <int> counter: 42;
+    in property <bool> widgets-enabled: true;
+    in-out property <string> selected_backup_mode: "Folder";
+    in-out property <[string]> file_formats: [];
+    in-out property <string> file_format_input: "";
+    in-out property <string> formatted_file_formats: "";
+    in-out property <string> source_folder: "";
+    in-out property <string> destination_folder: "";
+    in-out property <bool> change: false ;
+
+    callback quit_button_clicked();
+    callback save_button_clicked();
+    callback add_file_formats();
+    callback select_source_folder_clicked();
+    callback select_destination_folder_clicked();
+    callback folder_selected();
+    
+    title: "Group 5";
+
+    VerticalBox {
+
+        GridLayout {
+        spacing: 24px;
+            Row{
+               Text { text: "Source Backup:"; vertical-alignment: center ; horizontal-alignment: left; font-size: 14px; }
+               HorizontalLayout {
+                    colspan: 3;
+                    LineEdit {
+                        input-type: text;
+                        text: source_folder;
+                        horizontal-stretch: 1;
+                        read-only: true;
+                    }
+
+                    Button {
+                        icon: @image-url("assets/folder-icon.png");
+                        clicked => { select_source_folder_clicked() }
+                    }
+               }
+            }
+            Row{
+                Text { text: "Destination Backup:"; vertical-alignment: center; horizontal-alignment: left; font-size: 14px; }
+                HorizontalLayout {
+                    colspan: 3;
+                    LineEdit {
+                        input-type: text;
+                        text: destination_folder;
+                        horizontal-stretch: 1;
+                        read-only: true;
+                    }
+
+                    Button {
+                        icon: @image-url("assets/folder-icon.png");
+                        clicked => { select_destination_folder_clicked() }
+                    }
+                }
+            }
+
+            Row{
+                Text { text: "Type Backup:"; vertical-alignment: center; horizontal-alignment: left; font-size: 14px; }
+                HorizontalLayout {
+                    ComboBox {
+                        model: ["Folder", "Single files"];
+                        current-value <=> root.selected_backup_mode;
+                        enabled: widgets-enabled;
+                        selected => { if(root.selected_backup_mode == "Folder"){
+
+                            root.folder_selected();
+                            root.file_formats= [];
+                            formatted_file_formats= "";
+                        }}
+                    }
+
+                    LineEdit {
+                        visible: root.selected_backup_mode == "Single files";
+                        placeholder-text: "Type file (es: pdf)";
+                        horizontal_stretch: 1;
+                        text <=> root.file_format_input;
+
+                    }
+                    Button {
+                        visible: root.selected_backup_mode == "Single files";
+                        icon: @image-url("assets/plus-icon.png");
+                        text: "Add";
+                        clicked => {
+                            if (root.file_format_input != "") {
+
+                                root.add_file_formats();
+                                root.file_format_input = "";
+                            }
+                        }
+                    }
+                }
+            }
+            Row {
+                Text { text: "Formats File:"; vertical-alignment: center; horizontal-alignment: left; font-size: 14px; }
+                HorizontalLayout {
+                    horizontal-stretch: 1;
+                    Text {
+                        text: formatted_file_formats;
+                        font-size: 14px;
+                    }
+                    HorizontalLayout { // Contenitore aggiuntivo per allineare a destra
+                         // Allinea il contenuto a destra
+                        Button {
+                            visible: root.selected_backup_mode == "Single files";
+                            icon: @image-url("assets/trash-icon.png");
+                            text: "Delete";
+                            width: 100px; // Imposta la larghezza del pulsante
+                            clicked => {
+                                root.folder_selected();
+                                root.file_formats= [];
+                                formatted_file_formats= "";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        padding-top: 20px;   /* header line height in design */
+
+        Text {
+            text: "Instructions: to start the backup, draw a rectangle along the edges of the screen.\nThen, to confirm, draw an horizontal line across the screen";
+        }
+
+        spacing: 24px;
+
+        HorizontalBox {
+            alignment: space_between;
+            Button {
+                text: "Abort";
+                clicked => {
+                    root.quit_button_clicked();
+                }
+            }
+            Button {
+                text: "Save";
+                clicked => {
+                    root.save_button_clicked(); // Collegato al nuovo callback
+                }
+            }
+        }
+    }
+}
+
+export component ConfirmMessage inherits Window {
+    callback abort_button_clicked();
+
+    title: "Group 5";
+
+    VerticalBox {
+        Text {
+            text: "First command recognised correctly. To continue with the backup, please insert the confirm command";
+            font-size: 15px;
+        }
+
+        spacing: 24px;
+
+        HorizontalLayout {
+            alignment: center;
+            Button {
+                text: "Abort backup";
+                width: 150px;
+                clicked => {
+                    root.abort_button_clicked();
+                }
+            }
+        }
+    }
+}
+
+export component BackupCompletedMessage inherits Window {
+    callback close_button_clicked();
+
+    title: "Group 5";
+
+    VerticalBox {
+        Text {
+            text: "Backup correctly executed";
+            font-size: 15px;
+        }
+
+        spacing: 24px;
+
+        HorizontalLayout {
+            alignment: center;
+            Button {
+                text: "Close";
+                width: 150px;
+                clicked => {
+                    root.close_button_clicked();
+                }
+            }
+        }
+    }
+}
+
+export component BackupErrorMessage inherits Window {
+    callback close_button_clicked();
+
+    title: "Group 5";
+
+    VerticalBox {
+        Text {
+            text: "Error: source path was not found";
+            font-size: 15px;
+        }
+
+        spacing: 24px;
+
+        HorizontalLayout {
+            alignment: center;
+            Button {
+                text: "Close";
+                width: 150px;
+                clicked => {
+                    root.close_button_clicked();
+                }
+            }
+        }
+    }
+}
