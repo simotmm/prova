@@ -1,0 +1,12 @@
+2024-12-31 01:50:31.385284700 +01:00
+Average CPU usage in the last 120 seconds: 11.99%
+
+2024-12-31 01:52:31.479494600 +01:00
+Average CPU usage in the last 120 seconds: 11.84%
+
+2024-12-31 01:54:31.578166600 +01:00
+Average CPU usage in the last 120 seconds: 11.83%
+
+2024-12-31 01:56:31.671784600 +01:00
+Average CPU usage in the last 120 seconds: 11.80%
+
