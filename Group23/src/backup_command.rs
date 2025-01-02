@@ -7,7 +7,6 @@ use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
     let (sender, receiver) = mpsc::channel();
 
-    let device_state = DeviceState::new();
     let mut sides: Vec<char> = Vec::with_capacity(4); //vettore di char perchè devo verificare di avere caratteri (rappresentanti i lati) sempre alternati
                                                               //con un semplice contatore non avrei questo controllo
     let mut direction= false; //per verificare se il rettangolo è disegnato in senso orario o antiorario
@@ -15,6 +14,7 @@ pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
 
     thread::spawn(move || {
         let (width, height) = display_size().unwrap(); //dimensione in pixel dello schermo principale
+        let device_state = DeviceState::new(); //DeviceState in x11 (in unix, dipendente da device_query) non implementa il tratto Send, quindi lo definisco direttamente all'interno del thread
 
         let mut is_drawing = false;
         let mut start: (i32, i32) = (0, 0);
@@ -97,8 +97,8 @@ pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
 
 pub fn second_command() -> mpsc::Receiver<bool> {
     let (sender, receiver) = mpsc::channel();
-    let device_state = DeviceState::new();
     thread::spawn(move || {
+        let device_state = DeviceState::new();
         let (width, _height) = display_size().unwrap();
         let w = width as f64;
 

@@ -1,5 +1,4 @@
 #!/bin/bash
-# TOOL DI BACKUP: Attivazione
 echo "-- TOOL DI BACKUP: Attivazione --"
 echo ""
 # Chiusura di altre eventuali istanze del programma per evitare conflitti
@@ -17,6 +16,25 @@ else
     echo "Nessun processo attivo trovato."
 fi
 echo
+# Installazione componenti di x11
+# Ubuntu/Debian-based:
+sudo apt update -y
+sudo apt install -y libx11-dev pkg-config
+sudo apt install -y libxi-dev
+sudo apt install -y libxtst-dev
+# Fedora/RHEL-based:
+#sudo dnf install -y libX11-devel pkg-config
+#sudo dnf install -y libXi-devel
+#sudo dnf install -y libXtst-devel
+# Arch-based:
+#sudo pacman -S --noconfirm libx11 pkg-config
+#sudo pacman -S --noconfirm libxi
+#sudo pacman -S --noconfirm libxtst
+# MacOS (richiede Homebrew):
+#/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" #(installazione di homebrew)
+#yes | brew install libx11 pkg-config
+#yes | brew install libxi
+#yes | brew install libxtst
 # Compilazione
 echo "Compilazione del tool di backup..."
 cargo build --release
