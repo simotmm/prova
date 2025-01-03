@@ -16,25 +16,87 @@ else
     echo "Nessun processo attivo trovato."
 fi
 echo
-# Installazione componenti di x11
-# Ubuntu/Debian-based:
-sudo apt update -y
-sudo apt install -y libx11-dev pkg-config
-sudo apt install -y libxi-dev
-sudo apt install -y libxtst-dev
-# Fedora/RHEL-based:
-#sudo dnf install -y libX11-devel pkg-config
-#sudo dnf install -y libXi-devel
-#sudo dnf install -y libXtst-devel
-# Arch-based:
-#sudo pacman -S --noconfirm libx11 pkg-config
-#sudo pacman -S --noconfirm libxi
-#sudo pacman -S --noconfirm libxtst
-# MacOS (richiede Homebrew):
-#/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" #(installazione di homebrew)
-#yes | brew install libx11 pkg-config
-#yes | brew install libxi
-#yes | brew install libxtst
+
+# Verifica e installazione componenti di X11
+install_x11_components() {
+    MISSING_PACKAGES=()
+
+    # Verifica dei pacchetti su sistemi Debian/Ubuntu
+    if command -v apt &>/dev/null; then
+        for pkg in libx11-dev pkg-config libxi-dev libxtst-dev; do
+            if ! dpkg -s "$pkg" &>/dev/null; then
+                MISSING_PACKAGES+=("$pkg")
+            fi
+        done
+
+        if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "E' necessaria l'installazione di pacchetti aggiuntivi."
+            echo "I seguenti pacchetti sono mancanti: ${MISSING_PACKAGES[*]}."
+            echo "Installazione pacchetti mancanti..."
+            sudo apt update -y
+            sudo apt install -y "${MISSING_PACKAGES[@]}"
+            echo "Pacchetti installati correttamente."
+            echo ""
+        fi
+
+    # Verifica dei pacchetti su sistemi Fedora/RHEL
+    elif command -v dnf &>/dev/null; then
+        for pkg in libX11-devel pkg-config libXi-devel libXtst-devel; do
+            if ! rpm -q "$pkg" &>/dev/null; then
+                MISSING_PACKAGES+=("$pkg")
+            fi
+        done
+
+        if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "E' necessaria l'installazione di pacchetti aggiuntivi."
+            echo "I seguenti pacchetti sono mancanti: ${MISSING_PACKAGES[*]}"
+            echo "Installazione pacchetti mancanti..."
+            sudo dnf install -y "${MISSING_PACKAGES[@]}"
+            echo "Pacchetti installati correttamente."
+            echo ""
+        fi
+
+    # Verifica dei pacchetti su sistemi Arch
+    elif command -v pacman &>/dev/null; then
+        for pkg in libx11 pkg-config libxi libxtst; do
+            if ! pacman -Qi "$pkg" &>/dev/null; then
+                MISSING_PACKAGES+=("$pkg")
+            fi
+        done
+
+        if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "E' necessaria l'installazione di pacchetti aggiuntivi."
+            echo "I seguenti pacchetti sono mancanti: ${MISSING_PACKAGES[*]}"
+            echo "Installazione pacchetti mancanti..."
+            sudo pacman -S --noconfirm "${MISSING_PACKAGES[@]}"
+            echo "Pacchetti installati correttamente."
+            echo ""
+        fi
+
+    # MacOS con Homebrew
+    elif [[ "$OSTYPE" == "darwin"* ]] && command -v brew &>/dev/null; then
+        for pkg in libx11 pkg-config libxi libxtst; do
+            if ! brew list "$pkg" &>/dev/null; then
+                MISSING_PACKAGES+=("$pkg")
+            fi
+        done
+
+        if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "E' necessaria l'installazione di pacchetti aggiuntivi."
+            echo "I seguenti pacchetti sono mancanti: ${MISSING_PACKAGES[*]}"
+            echo "Installazione pacchetti mancanti..."
+            brew install "${MISSING_PACKAGES[@]}"
+            echo "Pacchetti installati correttamente."
+            echo ""
+        fi
+
+    else
+        echo "Sistema operativo non supportato o gestore di pacchetti non trovato."
+    fi
+}
+
+install_x11_components
+echo
 # Compilazione
 echo "Compilazione del tool di backup..."
 cargo build --release
@@ -80,4 +142,3 @@ echo "Dal prossimo avvio del PC il programma sarà avviato in background."
 echo
 echo "Chiusura della finestra in 50 secondi."
 sleep 50
-exit

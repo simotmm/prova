@@ -1,7 +1,7 @@
 use std::fs::{self, File}; // modulo per il filesystem
 use std::io::{self, BufRead, Write}; // modulo per l'I/O
 use std::path::{Path};
-use sysinfo::{System, Disks, ProcessesToUpdate, ProcessRefreshKind, get_current_pid};
+use sysinfo::{System, Disks, get_current_pid};
 use chrono::Utc;
 use std::time::{Instant, Duration};
 use std::{env, thread};
@@ -343,19 +343,15 @@ fn log_cpu() {
     let mut average_cpu_usage;
     let cpus = num_cpus::get();
     let tot_sec = 120;
-    let unit = 5; //un controllo consumo di cpu ogni 5 secondi, media e log ogni 120
+    let unit = 2; //un controllo consumo di cpu ogni 2 secondi, media e log ogni 120
     let mut units = 0;
     let mut start_time = Instant::now();
 
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL); //dalla documentazione: Wait because CPU usage is based on diff.
+    sys.refresh_all(); //dalla documentazione: "To start to have accurate CPU usage, a process needs to be refreshed twice because CPU usage computation is based on time diff"
 
     loop {
-        //dalla documentazione: To start to have accurate CPU usage, a process needs to be refreshed twice because CPU usage computation is based on time diff
-        sys.refresh_processes_specifics(
-            ProcessesToUpdate::Some(&[pid]),
-            true,
-            ProcessRefreshKind::new().with_cpu()
-        );
+        sys.refresh_all(); //"sys.refresh_cpu_usage()" o altri refresh mirati con pid non danno risultati accurati su linux
 
         if let Some(process) = sys.process(pid) {
             //dalla documentazione: "process.cpu_usage() Returns the total CPU usage (in %).
