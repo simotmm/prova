@@ -19,6 +19,7 @@ pub fn copy_dir(src: &str, dst: &str, extensions: Vec<String>) -> io::Result<i64
     let src_path = Path::new(src);
     let dst_path = Path::new(dst);
 
+
     if !src_path.exists() {
         let s = format!("Percorso per l'origine del backup ('{}') non trovato, backup annullato. Riavvio della procedura.", src);
         start_notify("Errore backup", &s);
@@ -43,7 +44,8 @@ pub fn copy_dir(src: &str, dst: &str, extensions: Vec<String>) -> io::Result<i64
         }
     } else {
         println!("Creazione della cartella di destinazione in corso.");
-        fs::create_dir(dst_path)?;
+        fs::create_dir_all(dst_path)?;
+
     }
 
     let backup_path = if dst_path.join("backup").exists() {
@@ -305,15 +307,16 @@ generate_backup_name: funzione per generare un nome per il backup
 ***/
 pub fn generate_backup_name(src: &str, dest: &str) -> String {
     // Split the `dest` string by "\\" and collect the parts into a vector
-    let parts: Vec<&str> = src.split("\\").collect();
-
+    #[cfg(not(target_os = "linux"))] let parts: Vec<&str> = src.split("\\").collect();
+    #[cfg(target_os = "linux")] let parts: Vec<&str> = src.split("/").collect();
     // Get the last part of the vector
     if let Some(last_word) = parts.last() {
         // Get the current timestamp in the desired format
         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
 
         // Create the backup name
-        return format!("{}{}_backup_{}", dest, last_word, timestamp);
+         #[cfg(target_os = "windows")] return format!("{}{}_backup_{}", dest, last_word, timestamp);
+        #[cfg(not(target_os = "windows"))] return format!("{}/{}_backup_{}", dest, last_word, timestamp);
     }
 
     // Return an empty string if `dest` does not contain any parts

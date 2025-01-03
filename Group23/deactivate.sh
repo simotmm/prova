@@ -28,6 +28,12 @@ if [ -f "target/debug/progetto_rust" ]; then
     rm -f target/debug/progetto_rust
 fi
 
+# Disinstallazione componenti di x11
+# Ubuntu/Debian-based:
+sudo apt purge -y libx11-dev pkg-config libxi-dev libxtst-dev
+sudo apt autoremove -y
+
+
 # Messaggio finale e chiusura
 echo "Il tool non è più in esecuzione."
 echo "Il programma non sarà più avviato in background all'avvio del PC."
