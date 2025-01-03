@@ -17,13 +17,13 @@ else
 fi
 echo
 
-# Verifica e installazione componenti di X11
-install_x11_components() {
+# Verifica e installazione componenti di X11 e build-essential
+install_components() {
     MISSING_PACKAGES=()
 
     # Verifica dei pacchetti su sistemi Debian/Ubuntu
     if command -v apt &>/dev/null; then
-        for pkg in libx11-dev pkg-config libxi-dev libxtst-dev; do
+        for pkg in build-essential libx11-dev pkg-config libxi-dev libxtst-dev; do
             if ! dpkg -s "$pkg" &>/dev/null; then
                 MISSING_PACKAGES+=("$pkg")
             fi
@@ -41,9 +41,13 @@ install_x11_components() {
 
     # Verifica dei pacchetti su sistemi Fedora/RHEL
     elif command -v dnf &>/dev/null; then
-        for pkg in libX11-devel pkg-config libXi-devel libXtst-devel; do
-            if ! rpm -q "$pkg" &>/dev/null; then
-                MISSING_PACKAGES+=("$pkg")
+        for pkg in "@Development Tools" libX11-devel pkg-config libXi-devel libXtst-devel; do
+            if [[ "$pkg" == "@Development Tools" ]]; then
+                dnf group list installed | grep -q "Development Tools" || MISSING_PACKAGES+=("$pkg")
+            else
+                if ! rpm -q "$pkg" &>/dev/null; then
+                    MISSING_PACKAGES+=("$pkg")
+                fi
             fi
         done
 
@@ -58,7 +62,7 @@ install_x11_components() {
 
     # Verifica dei pacchetti su sistemi Arch
     elif command -v pacman &>/dev/null; then
-        for pkg in libx11 pkg-config libxi libxtst; do
+        for pkg in base-devel libx11 pkg-config libxi libxtst; do
             if ! pacman -Qi "$pkg" &>/dev/null; then
                 MISSING_PACKAGES+=("$pkg")
             fi
@@ -75,11 +79,24 @@ install_x11_components() {
 
     # MacOS con Homebrew
     elif [[ "$OSTYPE" == "darwin"* ]] && command -v brew &>/dev/null; then
+
+        if ! command -v brew &>/dev/null; then
+            echo "Homebrew non è installato. Procedo con l'installazione..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo "Homebrew installato correttamente."
+            echo "Assicurati di aggiungere Homebrew al PATH se richiesto durante l'installazione."
+        fi
+
         for pkg in libx11 pkg-config libxi libxtst; do
             if ! brew list "$pkg" &>/dev/null; then
                 MISSING_PACKAGES+=("$pkg")
             fi
         done
+
+        if [ ! -x "$(command -v xcode-select)" ] || ! xcode-select --print-path &>/dev/null; then
+            echo "Installazione degli strumenti di sviluppo Xcode necessaria."
+            xcode-select --install || echo "Xcode installato o già configurato."
+        fi
 
         if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
             echo "E' necessaria l'installazione di pacchetti aggiuntivi."
@@ -94,8 +111,7 @@ install_x11_components() {
         echo "Sistema operativo non supportato o gestore di pacchetti non trovato."
     fi
 }
-
-install_x11_components
+install_components
 echo
 # Compilazione
 echo "Compilazione del tool di backup..."

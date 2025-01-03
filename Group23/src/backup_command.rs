@@ -7,8 +7,7 @@ use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
     let (sender, receiver) = mpsc::channel();
 
-    let mut sides: Vec<char> = Vec::with_capacity(4); //vettore di char perchè devo verificare di avere caratteri (rappresentanti i lati) sempre alternati
-                                                              //con un semplice contatore non avrei questo controllo
+    let mut sides = 0;         //contatore
     let mut direction= false; //per verificare se il rettangolo è disegnato in senso orario o antiorario
     let mut next: (String, String) = (String::new(), String::new());
 
@@ -26,6 +25,8 @@ pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
                 break;
             }
 
+            thread::sleep(std::time::Duration::from_millis(10));
+
             let mouse = device_state.get_mouse(); //per ottenere le coordinate del mouse e lo stato dei bottoni del mouse
             let coordinates = mouse.coords;
             if mouse.button_pressed[1]{     //pulsante premuto
@@ -38,51 +39,41 @@ pub fn first_command(stop_flag: Arc<AtomicBool>) -> mpsc::Receiver<bool> {
                     is_drawing = false; //aggiorno lo stato al valore corretto
                     end = coordinates;
                     
-                    if sides.len() == 0 {   //inserimento primo segmento
+                    if sides == 0 {   //inserimento primo segmento
                         if vertical_check(start, end, height, width){
-                            sides.push('V');
-                            println!("{}", sides.len());
+                            sides = sides + 1;
+                            println!("{}", sides);
                             direction = is_clockwise(start, end, 'V', width as i32); //senso orario o antiorario
                         }else{
                             if horizontal_check(start, end, width, height){
-                                sides.push('H');
+                                sides = sides + 1;
                                 direction = is_clockwise(start, end, 'H', height as i32); //senso orario o antiorario
-                                println!("{}", sides.len());
+                                println!("{}", sides);
                             }
                         }
                         next = next_side(end, direction);
                         println!("next: {:?}", next);
                     } else{ //ora vanno fatti i casi in cui un segmento è già stato inserito
-                        if sides.len() < 4 {
-                            if sides[sides.len() - 1] == 'V' && horizontal_check(start, end, width, height) {
-                                if is_correct(start, end, 'H', &next){
-                                    sides.push('H');
+                        if sides < 4 {
+                            if horizontal_check(start, end, width, height) && is_correct(start, end, 'H', &next) {
+                                    sides = sides + 1;
                                     next = next_side(end, direction);
-                                    println!("{}", sides.len());
+                                    println!("{}", sides);
                                     println!("next: {:?}", next);
-                                } else {
-                                    sides.clear();
-                                    println!("{}", sides.len());
-                                }
                             } else{
-                                if sides[sides.len() - 1] == 'H' && vertical_check(start, end, height, width){
-                                    if is_correct(start, end, 'V', &next){
-                                        sides.push('V');
+                                if vertical_check(start, end, height, width) && is_correct(start, end, 'V', &next) {
+                                        sides = sides + 1;
                                         next = next_side(end, direction);
-                                        println!("{}", sides.len());
+                                        println!("{}", sides);
                                         println!("next: {:?}", next);
-                                    } else {
-                                        sides.clear();
-                                        println!("{}", sides.len());
-                                    }
                                 } else{
-                                    sides.clear(); //se ho V e V oppure H e H oppure un segmento non valido, resetto tutto
-                                    println!("{}", sides.len());
+                                    sides = 0; //segmento non valido, oppure valido ma non corretto --> resetto tutto
+                                    println!("{}", sides);
                                 }
                             }
-                            if sides.len() == 4 { //rettangolo fatto
+                            if sides == 4 { //rettangolo fatto
                                 println!("ho TEORICAMENTE finito");
-                                sides.clear();
+                                sides = 0;
                                 sender.send(true).unwrap(); //NOTA: non c'è break, in modo da poter ricominciare in caso di errore
                                                               //il thread terminerà grazie a un avviso da parte del main
                             }
@@ -106,6 +97,7 @@ pub fn second_command() -> mpsc::Receiver<bool> {
         let mut start: (i32, i32) = (0, 0);
         let mut end: (i32, i32);
         loop {
+            thread::sleep(std::time::Duration::from_millis(10));
             let mouse = device_state.get_mouse();
             let coordinates = mouse.coords;
             if mouse.button_pressed[1]{
@@ -136,10 +128,8 @@ che il segmento tracciato sia almeno il 90% dell'altezza dello schermo
 e che il segmento sia tracciato lungo il bordo destro o sinistro dello schermo
 */
 fn vertical_check(start: (i32, i32), end: (i32, i32), height: u64, width:u64) -> bool {
-    //println!("sono in VERTICAL CHECK: end.0: {}", end.0);
     let tolerance = 50;
     let check = (start.0 >=  end.0 - tolerance && start.0 <= end.0 + tolerance) && (end.1 - start.1).abs() as f64 > 0.9 * height as f64;
-    //println!("{}", check && ((end.0 - tolerance <= 0) || (end.0 + tolerance >= width as i32)));
     check && ((end.0 - tolerance <= 0) || (end.0 + tolerance >= width as i32))
 }
 

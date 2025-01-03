@@ -1,0 +1,3 @@
+2025-01-03 12:44:22.108459300 +01:00
+Average CPU usage in the last 120 seconds: 20.11%
+

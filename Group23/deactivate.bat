@@ -27,7 +27,7 @@ if exist target\release\progetto_rust.exe (
 if exist target\debug\progetto_rust.exe (
     del /f /q target\debug\progetto_rust.exe
 )
-cargo clean
+
 rem messaggio finale e chiusura
 echo Il tool non e' piu' in esecuzione.
 echo Il programma non sara' piu' avviato in backgound all'avvio del pc.
